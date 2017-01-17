@@ -1,11 +1,11 @@
 "use strict";
 
-
 var loaderUtils = require("loader-utils");
 var minetype = require("mime");
+var path = require('path');
 
 module.exports = function(content){
-	var query, limit, mine, publicPath;
+	var query, limit, mine, publicPath, config, relativePath, basename, url;
 	var resourcePath = this.resourcePath;
 
 	// 缓存 loader 结果
@@ -31,17 +31,25 @@ module.exports = function(content){
 			throw new Error("emitFile is required from webpack module system , is your webapck too old ?");
 		}
 
-		var config = Object.assign({
-				publicPath : false, 
-				name : "[name].[ext]"
+		config = Object.assign({
+				publicPath : false
 			}, 
 			query, 
 			this.options
 		);
 
-		config.publicPath = config.publicPath || this.options.output.publicPath;
+		relativePath = path.relative(config.invokerRoot, this.resourcePath);
 
-		var url = loaderUtils.interpolateName(this, config.name, {
+		if(!config.invokerRoot){
+			throw new Error('invokerRoot is required in resource-url-loader');
+		}
+
+		basename = path.basename(config.invokerRoot);
+
+		config.publicPath = config.publicPath || this.options.output.publicPath;
+		config.name = basename + "/" + relativePath;
+
+		url = loaderUtils.interpolateName(this, config.name, {
 			context: config.context || this.options.context,
 			content: content,
 			regExp: config.regExp
