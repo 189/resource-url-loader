@@ -1,0 +1,15 @@
+{
+    "name": "resource-url-loader",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "loader-utils": "~0.2.5",
+        "mime": "1.2.x"
+    },
+    "author": "kv.wang87@gmail.com",
+    "license": "ISC"
+}
