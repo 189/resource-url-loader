@@ -10,6 +10,10 @@
         "loader-utils": "~0.2.5",
         "mime": "1.2.x"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/189/resource-url-loader"
+    },
     "author": "kv.wang87@gmail.com",
-    "license": "ISC"
+    "license": "MIT"
 }

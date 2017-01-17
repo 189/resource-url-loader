@@ -5,31 +5,82 @@ var loaderUtils = require("loader-utils");
 var minetype = require("mime");
 
 module.exports = function(content){
-	var query, limit, minetype;
+	var query, limit, mine, publicPath;
 	var resourcePath = this.resourcePath;
 
+	// 缓存 loader 结果
 	if(this.cacheable){
 		this.cacheable();
 	}
 
 	query = loaderUtils.parseQuery(this.query);
-	limit = (this.options && this.options.url && this.options.url.dataUrlLimit) || 0;
 	
-	if(query.limit){
-		limit = parseInt(query.limit, 10);
-	}
+	limit = query.limit 
+			? parseInt(query.limit, 10) 
+			: ((this.options && this.options.url && this.options.url.dataUrlLimit) || 0);
 
-	minetype = query.mimetype || query.minetype || mime.lookup(resourcePath);
+	mine = query.mimetype || query.minetype || minetype.lookup(resourcePath);
 
-	// base64
+	// 小于指定大小的文件 base64
 	if(limit <= 0 || content.length < limit){
-		// return "module.exports = " + JSON.stringify("data:");
-		return "module.exports = " + JSON.stringify("data:" + (mimetype ? mimetype + ";" : "") + "base64," + content.toString("base64"));
+		return "module.exports = " + JSON.stringify("data:" + (mine ? mine + ";" : "") + "base64," + content.toString("base64"));
 	}
-	// no base64
+	// 不符合 limit条件的其他文件生成物理文件
 	else {
-		// var fileLoader = require("file-loader");
-		// return fileLoader.call(this, content);
+		if(!this.emitFile){
+			throw new Error("emitFile is required from webpack module system , is your webapck too old ?");
+		}
+
+		var config = Object.assign({
+				publicPath : false, 
+				name : "[name].[ext]"
+			}, 
+			query, 
+			this.options
+		);
+
+		config.publicPath = config.publicPath || this.options.output.publicPath;
+
+		var url = loaderUtils.interpolateName(this, config.name, {
+			context: config.context || this.options.context,
+			content: content,
+			regExp: config.regExp
+		});
+
+		var sourceUrl, rules = config.customPathRules, isMatch = false;
+
+		if(config.publicPath){
+			publicPath = JSON.stringify(
+				typeof config.publicPath === 'function'
+				? config.publicPath(url)
+				: config.publicPath + url
+			);
+		}
+		else {
+			// 自定义路径生成规则 用于修复一些样式表文件通过相对路径引用上级目录文件问题
+			if(rules){
+				if(Array.isArray(rules)){
+					rules.forEach(function(rule){
+						if(url.indexOf(rule.pattern) > -1){
+							sourceUrl = url.replace(rule.pattern, rule.expect);
+							isMatch = true;
+						}
+					})
+					if(!isMatch){
+						sourceUrl = url.replace(/([^\/]+\/)/, '');
+					}
+				}
+			}
+			else {
+				sourceUrl = url.replace(/([^\/]+\/)/, '');
+			}
+			publicPath = "__webpack_public_path__ + " + JSON.stringify(sourceUrl);
+		}
+
+		// 指定文件路径生成文件
+		this.emitFile(url, content);
+
+		return "module.exports = " + publicPath + ";";
 	}
 
 };
