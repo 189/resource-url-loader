@@ -46,7 +46,10 @@ module.exports = function(content){
 
 		basename = path.basename(config.invokerRoot);
 
-		config.publicPath = config.publicPath || this.options.output.publicPath;
+		config.publicPath = typeof config.publicPath == 'undefined'
+							? this.options.output.publicPath
+							: config.publicPath;
+
 		config.name = basename + "/" + relativePath;
 
 		url = loaderUtils.interpolateName(this, config.name, {
@@ -82,7 +85,8 @@ module.exports = function(content){
 			else {
 				sourceUrl = url.replace(/([^\/]+\/)/, '');
 			}
-			publicPath = "__webpack_public_path__ + " + JSON.stringify(sourceUrl);
+			// publicPath = "__webpack_public_path__ + " + JSON.stringify(sourceUrl);
+			publicPath = JSON.stringify(sourceUrl);
 		}
 
 		// 指定文件路径生成文件
