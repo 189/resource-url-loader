@@ -92,6 +92,9 @@ module.exports = function(content){
 		// 指定文件路径生成文件
 		this.emitFile(url, content);
 
+		// Handle directory separator
+		publicPath = publicPath.replace(/(?:\\)+/g, path.posix.sep);
+
 		return "module.exports = " + publicPath + ";";
 	}
 
